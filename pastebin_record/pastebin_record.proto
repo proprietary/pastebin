@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package pastebin;
+option go_package = "github.com/proprietary/pastebin/pastebin_record";
+
+import "google/protobuf/timestamp.proto";
+
+message PastebinRecord {
+  string body = 1; // literal text; body of utf-8 text file
+  google.protobuf.Timestamp time_created = 2; // when this record was inserted into database
+  optional google.protobuf.Timestamp expiration = 3; // when to purge
+  optional string mime_type = 4; // mime type string of the "file"
+  optional string syntax_highlighting = 5; // language for syntax highlighting
+}
