@@ -4,14 +4,14 @@ import (
 	"crypto/sha256"
 	"errors"
 	badger "github.com/dgraph-io/badger/v4"
-	"log"
-	"time"
-	"os"
-	"strings"
-	"unicode/utf8"
 	"github.com/proprietary/pastebin/pastebin_record"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"log"
+	"os"
+	"strings"
+	"time"
+	"unicode/utf8"
 )
 
 type Slug string
@@ -43,10 +43,10 @@ func SavePastebin(db *badger.DB, text []byte, exp time.Time) (Slug, error) {
 	}
 	slug := GenerateTextSlug(text)
 	pb := pastebin_record.PastebinRecord{
-		Body: string(text),
-		TimeCreated: timestamppb.New(now),
-		Expiration: timestamppb.New(exp),
-		MimeType: nil,
+		Body:               string(text),
+		TimeCreated:        timestamppb.New(now),
+		Expiration:         timestamppb.New(exp),
+		MimeType:           nil,
 		SyntaxHighlighting: nil,
 	}
 	pastebinBytes, err := proto.Marshal(pb.ProtoReflect().Interface())
@@ -86,7 +86,7 @@ func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
 	return pb.GetBody(), err
 }
 
-/// RunMaintenance maintains integrity of the storage, including removing expired pastes.
+// / RunMaintenance maintains integrity of the storage, including removing expired pastes.
 func RunMaintenance(db *badger.DB) error {
 	now := time.Now()
 	// iterate through kv's and delete items according to various criteria
@@ -167,5 +167,5 @@ func makeSlug(digest []byte) Slug {
 var (
 	ErrNotAUtf8String          = errors.New("Not a UTF-8 string")
 	ErrMaxPastebinSizeExceeded = errors.New("Pastebin text too long")
-	ErrInvalidExpiration = errors.New("Attempt to create a pastebin that should have already expired")
+	ErrInvalidExpiration       = errors.New("Attempt to create a pastebin that should have already expired")
 )

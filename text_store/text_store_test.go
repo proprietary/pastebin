@@ -3,6 +3,7 @@ package text_store
 import (
 	badger "github.com/dgraph-io/badger/v4"
 	"testing"
+	"time"
 )
 
 func TestMakeSlug(t *testing.T) {
@@ -41,7 +42,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 		t.Fatalf("Failure to create Badger in-memory database for testing: %v", err)
 	}
 	defer db.Close()
-	slug, err := SavePastebin(db, []byte(examplePaste))
+	slug, err := SavePastebin(db, []byte(examplePaste), time.Now().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
