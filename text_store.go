@@ -12,7 +12,7 @@ import (
 
 type Slug string
 
-const MAX_PASTEBIN_SIZE int = 10 << 20
+const MAX_PASTEBIN_BYTES int = 10 << 20
 
 func openDb() *badger.DB {
 	dbPath := os.Getenv("SO_LIBHACK_PASTE__DB_PATH")
@@ -30,7 +30,7 @@ func SavePastebin(db *badger.DB, text []byte) (Slug, error) {
 	if utf8.ValidString(string(text)) == false {
 		return "", ErrNotAUtf8String
 	}
-	if len(text) > MAX_PASTEBIN_SIZE {
+	if len(text) > MAX_PASTEBIN_BYTES {
 		return "", ErrMaxPastebinSizeExceeded
 	}
 	slug := GenerateTextSlug(text)
