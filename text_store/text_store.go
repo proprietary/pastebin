@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 	"unicode/utf8"
+	"github.com/proprietary/pastebin/pastebin_record"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Slug string
@@ -34,22 +37,33 @@ func SavePastebin(db *badger.DB, text []byte) (Slug, error) {
 		return "", ErrMaxPastebinSizeExceeded
 	}
 	slug := GenerateTextSlug(text)
-	err := db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(slug), text)
+	pb := pastebin_record.PastebinRecord{
+		Body: string(text),
+		TimeCreated: timestamppb.Now(),
+		Expiration: nil,
+		MimeType: nil,
+		SyntaxHighlighting: nil,
+	}
+	pastebinBytes, err := proto.Marshal(pb.ProtoReflect().Interface())
+	if err != nil {
+		return "", err
+	}
+	err = db.Update(func(txn *badger.Txn) error {
+		return txn.Set([]byte(slug), pastebinBytes)
 	})
 	return slug, err
 }
 
 func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
-	var textData []byte = nil
+	var pbData []byte = nil
 	err := db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(slug))
 		if err != nil {
 			return err
 		}
-		textData = make([]byte, item.ValueSize())
+		pbData = make([]byte, item.ValueSize())
 		err = item.Value(func(val []byte) error {
-			copy(textData, val)
+			copy(pbData, val)
 			return nil
 		})
 		return err
@@ -57,9 +71,13 @@ func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// assume the data is valid if it was persisted to begin with
-	text := string(textData)
-	return text, err
+	// assume the data is a valid structure if it was persisted to begin with
+	var pb pastebin_record.PastebinRecord
+	err = proto.Unmarshal(pbData, &pb)
+	if err != nil {
+		return "", err
+	}
+	return pb.GetBody(), err
 }
 
 // / GenerateTextSlug uniquely encodes a body of bytes into a short string identifier.

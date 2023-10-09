@@ -6,6 +6,7 @@ import (
 	"net/http"
 	// "html/template"
 	"github.com/proprietary/pastebin/text_store"
+	// pb "github.com/proprietary/pastebin/pastebin_record"
 )
 
 func main() {
