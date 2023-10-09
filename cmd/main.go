@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 	// "html/template"
 	"github.com/proprietary/pastebin/text_store"
 	// pb "github.com/proprietary/pastebin/pastebin_record"
@@ -54,7 +55,7 @@ func (_ MyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			log.Println(string(body))
 			db := text_store.OpenDb()
 			defer db.Close()
-			slug, err := text_store.SavePastebin(db, body)
+			slug, err := text_store.SavePastebin(db, body, time.Now().Add(time.Hour * 24 * 365 * 2))
 			if err != nil {
 				log.Println("Fail to save pastebin:", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
