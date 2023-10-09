@@ -1,4 +1,4 @@
-package main
+package text_store
 
 import (
 	badger "github.com/dgraph-io/badger/v4"

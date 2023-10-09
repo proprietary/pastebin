@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	// "html/template"
+	"github.com/proprietary/pastebin/text_store"
 )
 
 func main() {
@@ -27,16 +28,18 @@ func (_ MyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
 		{
-			slug := Slug(req.URL.Path[1:])
-			db := openDb()
+			slug := text_store.Slug(req.URL.Path[1:])
+			db := text_store.OpenDb()
 			defer db.Close()
-			text, err := LookupPastebin(db, slug)
+			text, err := text_store.LookupPastebin(db, slug)
 			if err != nil {
 				log.Println(err)
 				http.Error(w, "Not Found", http.StatusNotFound)
 				return
 			}
 			w.Write([]byte(text))
+			w.Header().Add("Content-Type", "text/plain")
+			w.Header().Add("Access-Control-Allow-Origin", "*")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -48,9 +51,9 @@ func (_ MyHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			log.Println(string(body))
-			db := openDb()
+			db := text_store.OpenDb()
 			defer db.Close()
-			slug, err := SavePastebin(db, body)
+			slug, err := text_store.SavePastebin(db, body)
 			if err != nil {
 				log.Println("Fail to save pastebin:", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)

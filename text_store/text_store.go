@@ -1,4 +1,4 @@
-package main
+package text_store
 
 import (
 	"crypto/sha256"
@@ -14,7 +14,7 @@ type Slug string
 
 const MAX_PASTEBIN_BYTES int = 10 << 20
 
-func openDb() *badger.DB {
+func OpenDb() *badger.DB {
 	dbPath := os.Getenv("SO_LIBHACK_PASTE__DB_PATH")
 	if len(dbPath) == 0 {
 		log.Fatal(`Missing environment variable for path of database: "SO_LIBHACK_PASTE__DB_PATH"`)
