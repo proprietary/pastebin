@@ -1,8 +1,8 @@
 package main
 
 import (
-	"testing"
 	badger "github.com/dgraph-io/badger/v4"
+	"testing"
 )
 
 func TestMakeSlug(t *testing.T) {
@@ -11,12 +11,12 @@ func TestMakeSlug(t *testing.T) {
 	slug := GenerateTextSlug(someData)
 	// produces some output
 	if len(slug) == 0 {
-		t.Fatalf(`Slug generated from "%s" is empty ("%s")`, helloWorldString, slug);
+		t.Fatalf(`Slug generated from "%s" is empty ("%s")`, helloWorldString, slug)
 	}
 	// produces the same output repeatedly
 	slug2 := GenerateTextSlug([]byte(helloWorldString))
 	if len(slug2) == 0 {
-		t.Fatalf(`Slug generated from "%s" is empty ("%s")`, helloWorldString, slug2);
+		t.Fatalf(`Slug generated from "%s" is empty ("%s")`, helloWorldString, slug2)
 	}
 	if string(slug) != string(slug2) {
 		t.Fatalf(`First invocation generated "%s" yet second invocation on the same data produced "%s"`, slug2, slug)

@@ -2,12 +2,12 @@ package main
 
 import (
 	"crypto/sha256"
+	"errors"
 	badger "github.com/dgraph-io/badger/v4"
-	"os"
 	"log"
+	"os"
 	"strings"
 	"unicode/utf8"
-	"errors"
 )
 
 type Slug string
@@ -62,7 +62,7 @@ func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
 	return text, err
 }
 
-/// GenerateTextSlug uniquely encodes a body of bytes into a short string identifier.
+// / GenerateTextSlug uniquely encodes a body of bytes into a short string identifier.
 func GenerateTextSlug(text []byte) Slug {
 	h := sha256.New()
 	h.Write(text)
@@ -70,7 +70,7 @@ func GenerateTextSlug(text []byte) Slug {
 	return makeSlug(sum)
 }
 
-/// makeSlug encodes arbitrary bytes to a short string.
+// / makeSlug encodes arbitrary bytes to a short string.
 func makeSlug(digest []byte) Slug {
 	var availableCharacters []rune = []rune("acdefghjklmnpqrstuvwxyz023456789")
 	const slugLength int = 8
@@ -88,6 +88,6 @@ func makeSlug(digest []byte) Slug {
 }
 
 var (
-	ErrNotAUtf8String = errors.New("Not a UTF-8 string")
+	ErrNotAUtf8String          = errors.New("Not a UTF-8 string")
 	ErrMaxPastebinSizeExceeded = errors.New("Pastebin text too long")
 )
