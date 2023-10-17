@@ -1,20 +1,20 @@
 package router
 
 import (
-	"github.com/proprietary/pastebin/text_store"
-	"github.com/proprietary/pastebin/pastebin_record"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"fmt"
+	badger "github.com/dgraph-io/badger/v4"
+	"github.com/proprietary/pastebin/pastebin_record"
+	"github.com/proprietary/pastebin/text_store"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
 	"net/http"
 	"net/netip"
 	"time"
-	badger "github.com/dgraph-io/badger/v4"
 )
 
-type BrowserClientHandler struct{
+type BrowserClientHandler struct {
 	mux *http.ServeMux
-	db *badger.DB
+	db  *badger.DB
 }
 
 func NewBrowserClientHandler(db *badger.DB) BrowserClientHandler {
@@ -24,7 +24,7 @@ func NewBrowserClientHandler(db *badger.DB) BrowserClientHandler {
 	mux.HandleFunc("/", handleRoot(db))
 	return BrowserClientHandler{
 		mux: mux,
-		db: db,
+		db:  db,
 	}
 }
 
@@ -40,16 +40,16 @@ func browserClientHandlerSingleton(db *badger.DB) *BrowserClientHandler {
 	return browserClientHandler
 }
 
-func handleCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
+func handleCreate(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodPut {
 			OurViews.renderErrorPage(w, &ErrorPage{
 				Meta: Meta{
-					Title: "Wrong method",
+					Title:       "Wrong method",
 					Description: "This is an error page responding to an incorrect HTTP method.",
 				},
 				ErrorMessage: "Wrong HTTP method; only POST or PUT are allowed at `/create`",
-				StatusCode: http.StatusMethodNotAllowed,
+				StatusCode:   http.StatusMethodNotAllowed,
 			})
 			return
 		}
@@ -70,10 +70,10 @@ func handleCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		ip := getClientIp(req)
 		// validate paste
 		record := pastebin_record.PastebinRecord{
-			Body: paste,
+			Body:        paste,
 			TimeCreated: timestamppb.New(time.Now()),
-			Filename: &filename,
-			Expiration: timestamppb.New(expiration),
+			Filename:    &filename,
+			Expiration:  timestamppb.New(expiration),
 		}
 		// TODO(zds): add mime type and syntax highlighting fields
 		// record client IP ad the creator of this paste
@@ -99,16 +99,16 @@ func handleCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func handleDelete(db *badger.DB) func(http.ResponseWriter, *http.Request) {
+func handleDelete(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodDelete {
 			OurViews.renderErrorPage(w, &ErrorPage{
 				Meta: Meta{
-					Title: "Wrong method",
+					Title:       "Wrong method",
 					Description: "This is an error page responding to an incorrect HTTP method.",
 				},
 				ErrorMessage: "Wrong HTTP method; only POST or DELETE are allowed on `/delete`",
-				StatusCode: http.StatusMethodNotAllowed,
+				StatusCode:   http.StatusMethodNotAllowed,
 			})
 			return
 		}
@@ -116,11 +116,11 @@ func handleDelete(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		if len(slug) == 0 {
 			OurViews.renderErrorPage(w, &ErrorPage{
 				Meta: Meta{
-					Title: "Error: Bad request",
+					Title:       "Error: Bad request",
 					Description: "This is an error page responding to a bad request missing a POST parameter.",
 				},
 				ErrorMessage: `Missing "slug" POST parameter in body`,
-				StatusCode: http.StatusBadRequest,
+				StatusCode:   http.StatusBadRequest,
 			})
 			return
 		}
@@ -156,13 +156,13 @@ func handleDelete(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func handleRoot(db *badger.DB) func (http.ResponseWriter, *http.Request) {
+func handleRoot(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		switch req.URL.Path {
 		case "/":
 			page := CreatePage{
 				Meta: Meta{
-					Title: "Create a new paste",
+					Title:       "Create a new paste",
 					Description: "Create a new text snippet saved as a link on the internet",
 				},
 			}
@@ -177,24 +177,24 @@ func handleRoot(db *badger.DB) func (http.ResponseWriter, *http.Request) {
 			if err != nil {
 				OurViews.renderErrorPage(w, &ErrorPage{
 					Meta: Meta{
-						Title: "Paste not found",
+						Title:       "Paste not found",
 						Description: "paste not found",
 					},
 					ErrorMessage: fmt.Sprintf("Paste \"%s\" not found or expired", slug),
-					StatusCode: http.StatusNotFound,
+					StatusCode:   http.StatusNotFound,
 				})
 				return
 			}
 			log.Println(paste.GetFilename(), paste.GetBody())
 			page := ResultPage{
 				Meta: Meta{
-					Title: "Paste found",
+					Title:       "Paste found",
 					Description: "Paste found",
 				},
-				Paste: paste.GetBody(),
-				Exp: paste.GetExpiration().AsTime(),
+				Paste:    paste.GetBody(),
+				Exp:      paste.GetExpiration().AsTime(),
 				Filename: paste.GetFilename(),
-				Slug: string(slug),
+				Slug:     string(slug),
 			}
 			err = OurViews.renderResultPage(w, &page)
 			if err != nil {

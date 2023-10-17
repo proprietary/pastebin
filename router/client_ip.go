@@ -1,9 +1,9 @@
 package router
 
 import (
-	"net/netip"
 	"log"
 	"net/http"
+	"net/netip"
 )
 
 func knownCloudflare() []netip.Prefix {
@@ -45,7 +45,6 @@ func init() {
 	knownCloudflareNetworks = knownCloudflare()
 }
 
-
 func getClientIp(req *http.Request) netip.Addr {
 	// normal client
 	addrPort := netip.MustParseAddrPort(req.RemoteAddr)
@@ -74,7 +73,7 @@ func getClientIp(req *http.Request) netip.Addr {
 		} else {
 			// client tried to forge a Cloudflare request
 			log.Printf(`Client with IP=%q tried to forge a Cloudflare request by setting the header "CF-Connecting-IP"`,
-			addr.String())
+				addr.String())
 			return addr
 		}
 	}

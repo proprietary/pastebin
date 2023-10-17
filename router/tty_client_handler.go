@@ -2,10 +2,10 @@ package router
 
 import (
 	badger "github.com/dgraph-io/badger/v4"
-	"net/http"
-	"log"
-	"io"
 	"github.com/proprietary/pastebin/text_store"
+	"io"
+	"log"
+	"net/http"
 	"time"
 )
 

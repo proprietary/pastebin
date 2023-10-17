@@ -3,10 +3,10 @@ package router
 import (
 	"embed"
 	"html/template"
-	"net/http"
-	"log"
-	"time"
 	"io"
+	"log"
+	"net/http"
+	"time"
 )
 
 //go:embed views/*
@@ -17,7 +17,7 @@ type Views struct {
 }
 
 type Meta struct {
-	Title string
+	Title       string
 	Description string
 }
 
@@ -35,11 +35,11 @@ func New() *Views {
 }
 
 type ResultPage struct {
-	Meta Meta
-	Paste string
-	Exp time.Time
+	Meta     Meta
+	Paste    string
+	Exp      time.Time
 	Filename string
-	Slug string
+	Slug     string
 }
 
 func (v *Views) renderResultPage(w io.Writer, page *ResultPage) error {
@@ -57,8 +57,8 @@ func (v *Views) renderCreatePage(w io.Writer, page *CreatePage) error {
 }
 
 type ErrorPage struct {
-	Meta Meta
-	StatusCode int
+	Meta         Meta
+	StatusCode   int
 	ErrorMessage string
 }
 
