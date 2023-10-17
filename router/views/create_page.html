@@ -162,6 +162,11 @@
 	</svg>
 	<div>New Paste:</div>
       </div>
+      {{ if .Error }}
+      <div class="error">
+	{{ .Error.ErrorMessage }}
+      </div>
+      {{ end }}
       <div>
 	<form action="/create" method="POST">
 	  <textarea name="paste" id="paste" placeholder="Write your paste here..."></textarea>

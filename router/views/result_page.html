@@ -47,6 +47,16 @@
 	  border-radius: 5px;
       }
 
+      #back-button {
+	  margin-top: 2rem;
+      }
+
+      #back-button a {
+	  color: var(--dark-blue);
+	  font-size: 2rem;
+	  margin-top: 2rem;
+      }
+
       .github {
 	  color: #000;
       }
@@ -69,6 +79,10 @@
 
       #paste-result {
 	  max-width: 100vw;
+      }
+
+      #paste-result > pre {
+	  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
       }
 
       /* Dark theme */
@@ -94,6 +108,14 @@
 
 	  .github {
 	      color: #fff;
+	  }
+
+	  #back-button a {
+	      color: var(--light-blue);
+	  }
+
+	  #paste-result > pre {
+	      box-shadow: none;
 	  }
       }
 
@@ -126,14 +148,16 @@
     <nav>
     </nav>
     <main>
-      <div>
+      <div id="back-button">
 	<a href="/">
 	  ← Create new paste
 	</a>
       </div>
       <div id="paste-result">
 	<h2>{{ .Filename }}</h2>
-	<pre><code>{{ .Paste }}</code></pre>
+	<libhack-copy-to-clipboard-button data-text-source-selector="#paste-contents">
+	</libhack-copy-to-clipboard-button>
+	<pre><code id="paste-contents">{{ .Paste }}</code></pre>
       </div>
       <div>
 	<form method="post" action="/delete">
@@ -210,5 +234,78 @@
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/x86asm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/autohotkey.min.js"></script>
     <script>hljs.highlightAll();</script>
+
+    <script>
+      class CopyToClipboardButton extends HTMLElement {
+	  static observedAttributes = ["data-text-source-selector"];
+
+	  static clipboardIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+</svg><span class="copied-status-text">Copy</span>`;
+	  static clipboardWithCheckIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+  <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+  <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+</svg>
+<span class="copied-status-text">Copied!</span>`;
+	  
+	  constructor() {
+	      super();
+	      const shadow = this.attachShadow({ mode: "open" });
+	      const button = document.createElement("button");
+	      button.innerHTML = CopyToClipboardButton.clipboardIcon;
+	      shadow.appendChild(button);
+	      const style = document.createElement("style");
+	      style.textContent = `
+                .copied-status-text {
+                  padding-left: 1rem;
+                }
+                button {
+	          background-color: #073B4C;
+	          color: #FFF;
+	          font-weight: bold;
+	          border: none;
+	          padding: 1rem;
+	          cursor: pointer;
+	          font-size: x-large;
+	          border-radius: 5px;
+                }
+              `;
+	      shadow.appendChild(style);
+	  }
+
+	  getButton() {
+	      return this.shadowRoot.querySelector("button");
+	  }
+
+	  copyToClipboard() {
+	      const button = this.getButton();
+	      const textSourceSelector = this.getAttribute("data-text-source-selector");
+	      const textToCopy = document.querySelector(textSourceSelector) && document.querySelector(textSourceSelector).innerText;
+	      navigator.clipboard.writeText(textToCopy).then(() => {
+		  // Provide user feedback that text was cpied
+		  button.innerHTML = CopyToClipboardButton.clipboardWithCheckIcon;
+		  // Reset icon after a couple seconds
+		  setTimeout(() => {
+		      button.innerHTML = CopyToClipboardButton.clipboardIcon;
+		  }, 2000);
+	      }).catch((err) => {
+		  console.error(err);
+	      });
+	  }
+	  
+	  connectedCallback() {
+	      const button = this.getButton();
+	      button.addEventListener("click", this.copyToClipboard.bind(this));
+	  }
+
+	  disconnectedCallback() {
+	      const button = this.getButton();
+	      button.removeEventListener("click", this.copyToClipboard.bind(this));
+	  }
+      }
+      customElements.define("libhack-copy-to-clipboard-button", CopyToClipboardButton);
+    </script>
   </body>
 </html>
