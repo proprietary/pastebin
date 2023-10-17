@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"github.com/proprietary/pastebin/router"
-	"github.com/proprietary/pastebin/text_store"
 	"flag"
 	"fmt"
 	badger "github.com/dgraph-io/badger/v4"
+	"github.com/proprietary/pastebin/router"
+	"github.com/proprietary/pastebin/text_store"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +16,7 @@ import (
 var port *uint = flag.Uint("port", 50999, "port to run HTTP server")
 
 func main() {
+	flag.Parse()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT)
 	var db *badger.DB = text_store.OpenDb()
@@ -29,6 +30,7 @@ func main() {
 	var handler router.VariantHandler = router.VariantHandler{
 		Db: db,
 	}
+	log.Printf("Listening on port %d...", *port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), handler)
 	if err != nil {
 		log.Fatal("ListenAndServe:", err)
