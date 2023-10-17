@@ -9,7 +9,7 @@ import (
 
 func TestMakeSlug(t *testing.T) {
 	helloWorldString := "hello world"
-	someData := quickMakePastebinRecrod(helloWorldString)
+	someData := quickMakePastebinRecord(helloWorldString)
 	slug := GenerateTextSlug(someData)
 	// produces some output
 	if len(slug) == 0 {
@@ -27,7 +27,7 @@ func TestMakeSlug(t *testing.T) {
 
 func FuzzMakeSlug(f *testing.F) {
 	f.Fuzz(func(t *testing.T, someString string) {
-		slug := GenerateTextSlug(quickMakePastebinRecrod(someString))
+		slug := GenerateTextSlug(quickMakePastebinRecord(someString))
 		if len(slug) == 0 {
 			t.Fatalf(`Slug generated from "%s" is empty ("%s")`, someString, slug)
 		}
@@ -60,7 +60,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 }
 
 func quickMakePastebinRecord(text string) *pastebin_record.PastebinRecord {
-	dst := make(pastebin_record.PastebinRecord)
+	dst := new(pastebin_record.PastebinRecord)
 	dst.Body = text
 	return dst
 }
