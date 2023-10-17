@@ -29,6 +29,17 @@ https://paste.libhack.so/lktsssj5
 - Protocol Buffers for serialization of values stored in the embedded kv database
 - Go standard library for the rest, including HTTP
 
+## Example of running with Docker
+
+Note: an environment variable (``SO_LIBHACK_PASTE_DB_PATH``) must be set pointing to a path which stores the embedded database. In the following example, that is ``/tmp/db`` which is created if it does not exist.
+
+```bash
+docker build -t pastebin .
+docker run -p 50998:50998 -e SO_LIBHACK_PASTE__DB_PATH=/var/db -v /tmp/db:/var/db pastebin
+```
+
+...and see the service running at ``http://127.0.0.1:50998``
+
 ## License
 
 Apache-2.0
