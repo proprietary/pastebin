@@ -13,6 +13,7 @@ var (
 	safariUserAgentRegexp  *regexp.Regexp
 	chromeUserAgentRegexp  *regexp.Regexp
 	operaUserAgentRegexp   *regexp.Regexp
+	oldEdgeUserAgentRegexp *regexp.Regexp
 )
 
 func init() {
@@ -33,19 +34,29 @@ func init() {
 	safariUserAgentRegexp = regexp.MustCompile(`.*Safari/.*`)
 	chromeUserAgentRegexp = regexp.MustCompile(`.*Chrome?(ium)?/.*`)
 	operaUserAgentRegexp = regexp.MustCompile(`.*(OPR|Opera)/.*`)
+	oldEdgeUserAgentRegexp = regexp.MustCompile(`.*Trident.*`)
+}
+
+func isCurlLike(userAgent []byte) bool {
+	return len(userAgent) == 0 || curlUserAgentRegexp.Match(userAgent) || wgetUserAgentRegexp.Match(userAgent) || httpieUserAgentRegexp.Match(userAgent)
+}
+
+func isBrowser(userAgent []byte) bool {
+	return mozillaUserAgentRegexp.Match(userAgent) ||
+		safariUserAgentRegexp.Match(userAgent) ||
+		chromeUserAgentRegexp.Match(userAgent) ||
+		operaUserAgentRegexp.Match(userAgent) ||
+		oldEdgeUserAgentRegexp.Match(userAgent)
 }
 
 func userAgentIsCurlLike(req *http.Request) bool {
 	var userAgent = extractUserAgent(req)
-	return len(userAgent) == 0 || curlUserAgentRegexp.Match(userAgent) || wgetUserAgentRegexp.Match(userAgent) || httpieUserAgentRegexp.Match(userAgent)
+	return isCurlLike(userAgent)
 }
 
 func userAgentIsBrowser(req *http.Request) bool {
 	var userAgent = extractUserAgent(req)
-	return mozillaUserAgentRegexp.Match(userAgent) ||
-		safariUserAgentRegexp.Match(userAgent) ||
-		chromeUserAgentRegexp.Match(userAgent) ||
-		operaUserAgentRegexp.Match(userAgent)
+	return isBrowser(userAgent)
 }
 
 func extractUserAgent(req *http.Request) []byte {
