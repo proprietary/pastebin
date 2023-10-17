@@ -41,7 +41,6 @@ func SavePastebin(db *badger.DB, text []byte, exp time.Time) (Slug, error) {
 	if now.After(exp) {
 		return "", ErrInvalidExpiration
 	}
-	slug := GenerateTextSlug(text)
 	pb := pastebin_record.PastebinRecord{
 		Body:               string(text),
 		TimeCreated:        timestamppb.New(now),
@@ -49,6 +48,7 @@ func SavePastebin(db *badger.DB, text []byte, exp time.Time) (Slug, error) {
 		MimeType:           nil,
 		SyntaxHighlighting: nil,
 	}
+	slug := GenerateTextSlug(&pb)
 	pastebinBytes, err := proto.Marshal(pb.ProtoReflect().Interface())
 	if err != nil {
 		return "", err
@@ -58,6 +58,50 @@ func SavePastebin(db *badger.DB, text []byte, exp time.Time) (Slug, error) {
 		return txn.SetEntry(entry)
 	})
 	return slug, err
+}
+
+func validate(record *pastebin_record.PastebinRecord) error {
+	now := time.Now()
+	if now.After(record.GetExpiration().AsTime()) {
+		return ErrInvalidExpiration
+	}
+	return nil
+}
+
+func StoreNewPaste(db *badger.DB, record *pastebin_record.PastebinRecord) (Slug, error) {
+	if validationError := validate(record); validationError != nil {
+		return "", validationError
+	}
+	slug := GenerateTextSlug(record)
+	ser, err := proto.Marshal(record)
+	if err != nil {
+		return "", err
+	}
+	entry := badger.NewEntry([]byte(slug), ser).WithTTL(record.GetExpiration().AsTime().Sub(time.Now()))
+	err = db.Update(func(txn *badger.Txn) error {
+		return txn.SetEntry(entry)
+	})
+	return slug, err
+}
+
+func FindPaste(db *badger.DB, slug Slug) (*pastebin_record.PastebinRecord, error) {
+	var buf []byte
+	err := db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(slug))
+		if err != nil {
+			return err
+		}
+		buf, err = item.ValueCopy(buf)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	var pastebinRecord *pastebin_record.PastebinRecord = new(pastebin_record.PastebinRecord)
+	if err = proto.Unmarshal(buf, pastebinRecord); err != nil {
+		return nil, err
+	}
+	return pastebinRecord, nil
 }
 
 func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
@@ -84,6 +128,12 @@ func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
 		return "", err
 	}
 	return pb.GetBody(), err
+}
+
+func DeletePaste(db *badger.DB, slug Slug) error {
+	return db.Update(func(txn *badger.Txn) error {
+		return txn.Delete([]byte(slug))
+	})
 }
 
 /// KeepalivePastebin issues a new expiration for a pastebin.
@@ -176,9 +226,10 @@ func RunMaintenance(db *badger.DB) error {
 }
 
 // / GenerateTextSlug uniquely encodes a body of bytes into a short string identifier.
-func GenerateTextSlug(text []byte) Slug {
+func GenerateTextSlug(pb *pastebin_record.PastebinRecord) Slug {
 	h := sha256.New()
-	h.Write(text)
+	h.Write([]byte(pb.GetFilename()))
+	h.Write([]byte(pb.GetBody()))
 	sum := h.Sum(nil)
 	return makeSlug(sum)
 }

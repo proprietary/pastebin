@@ -5,11 +5,14 @@ option go_package = "github.com/proprietary/pastebin/pastebin_record";
 
 import "google/protobuf/timestamp.proto";
 
+enum IPAddressVersion {
+  V4 = 0;
+  V6 = 1;
+}
+
 message IPAddress {
-  oneof version {
-    fixed32 v4 = 1;
-    bytes v6 = 2;
-  }
+  bytes ip = 1;
+  IPAddressVersion version = 2;
 }
 
 message PastebinRecord {

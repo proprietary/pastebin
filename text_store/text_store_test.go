@@ -4,18 +4,19 @@ import (
 	badger "github.com/dgraph-io/badger/v4"
 	"testing"
 	"time"
+	"github.com/proprietary/pastebin/pastebin_record"
 )
 
 func TestMakeSlug(t *testing.T) {
 	helloWorldString := "hello world"
-	someData := []byte(helloWorldString)
+	someData := quickMakePastebinRecrod(helloWorldString)
 	slug := GenerateTextSlug(someData)
 	// produces some output
 	if len(slug) == 0 {
 		t.Fatalf(`Slug generated from "%s" is empty ("%s")`, helloWorldString, slug)
 	}
 	// produces the same output repeatedly
-	slug2 := GenerateTextSlug([]byte(helloWorldString))
+	slug2 := GenerateTextSlug(quickMakePastebinRecord(helloWorldString))
 	if len(slug2) == 0 {
 		t.Fatalf(`Slug generated from "%s" is empty ("%s")`, helloWorldString, slug2)
 	}
@@ -26,7 +27,7 @@ func TestMakeSlug(t *testing.T) {
 
 func FuzzMakeSlug(f *testing.F) {
 	f.Fuzz(func(t *testing.T, someString string) {
-		slug := GenerateTextSlug([]byte(someString))
+		slug := GenerateTextSlug(quickMakePastebinRecrod(someString))
 		if len(slug) == 0 {
 			t.Fatalf(`Slug generated from "%s" is empty ("%s")`, someString, slug)
 		}
@@ -56,4 +57,10 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
 	if retrievedPaste != examplePaste {
 		t.Fatalf(`Expected: "%s", Got: "%s"`, examplePaste, retrievedPaste)
 	}
+}
+
+func quickMakePastebinRecord(text string) *pastebin_record.PastebinRecord {
+	dst := make(pastebin_record.PastebinRecord)
+	dst.Body = text
+	return dst
 }
