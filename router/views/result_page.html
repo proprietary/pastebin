@@ -6,17 +6,134 @@
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0">
     <title>{{ .Meta.Title }}</title>
     <meta name="description" content="{{ .Meta.Description }}">
+    <link rel="stylesheet" href="/path/to/styles/default.css">
+    <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/styles/default.min.css">
+
+    <style type="text/css">
+      :root {
+	  --red: #EF476F;
+	  --yellow: #FFD166;
+	  --green: #06D6A0;
+	  --light-blue: #118AB2;
+	  --dark-blue: #073B4C;
+	  --light-gray: #F4F4F4;
+	  --black: #000;
+	  --white: #fff;
+      }
+      
+      body {
+	  font-family: "SF Pro", Helvetica, sans-serif;
+	  margin: 0;
+	  padding: 0;
+	  background-color: #f4f4f4;
+	  color: #333;
+      }
+
+      main {
+	  display: grid;
+	  place-items: center;
+	  min-height: calc(100vh - 40px);
+	  grid-gap: 4rem;
+      }
+
+      button {
+	  background-color: var(--red);
+	  color: var(--white);
+	  font-weight: bold;
+	  border: none;
+	  padding: 10px;
+	  cursor: pointer;
+	  font-size: xx-large;
+	  border-radius: 5px;
+      }
+
+      .github {
+	  color: #000;
+      }
+
+      footer {
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  padding: 6rem 1rem 4rem 1rem;
+      }
+
+      footer .copyright {
+	  padding-right: 1rem;
+      }
+
+      textarea[name="paste"] {
+	  width: 100%;
+	  min-height: 200px;
+      }
+
+      #paste-result {
+	  max-width: 100vw;
+      }
+
+      /* Dark theme */
+      @media (prefers-color-scheme: dark) {
+	  body {
+              background-color: var(--black);
+              color: var(--white);
+	  }
+
+	  #new-paste-header {
+	      color: var(--light-blue);
+	  }
+
+	  form {
+              background-color: #444;
+              box-shadow: none;
+	  }
+
+	  textarea, input[type="date"], input[type="text"] {
+              background-color: #555;
+              color: #f4f4f4;
+	  }
+
+	  .github {
+	      color: #fff;
+	  }
+      }
+
+      @media only screen and (max-width: 600px) {
+	  form {
+	      width: auto;
+	  }
+      }
+
+      @media only screen and (min-width: 900px) {
+	  textarea[name="paste"] {
+	      min-height: 600px;
+	  }
+      }
+
+      @media only screen and (min-width: 1200px) {
+	  main {
+	      max-width: 50vw;
+	      margin-left: auto;
+	      margin-right: auto;
+	  }
+	  
+	  textarea[name="paste"] {
+	      min-height: 50vh;
+	  }
+      }
+    </style>
   </head>
   <body>
     <nav>
     </nav>
     <main>
-      <h1>Pastebin found</h1>
       <div>
+	<a href="/">
+	  ← Create new paste
+	</a>
+      </div>
+      <div id="paste-result">
 	<h2>{{ .Filename }}</h2>
-	<pre>
-	  {{ .Paste }}
-	</pre>
+	<pre><code>{{ .Paste }}</code></pre>
       </div>
       <div>
 	<form method="post" action="/delete">
@@ -25,5 +142,73 @@
 	</form>
       </div>
     </main>
+    <footer>
+      <div class="copyright">
+	&copy;2023 Zelly Snyder
+      </div>
+      <a href="https://github.com/proprietary/pastebin" title="Fork me on Github!" class="github" target="_blank">
+	<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+	  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+	</svg>
+      </a>
+    </footer>
+    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.8.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/go.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/cpp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/csharp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/cmake.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/css.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/dockerfile.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/xml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/typescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/swift.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/sql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/shell.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/scss.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/scala.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/rust.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/ruby.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/r.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/python-repl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/protobuf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/powershell.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/profile.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/plaintext.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/php.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/php-template.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/pgsql.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/perl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/node-repl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/objectivec.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/nix.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/nginx.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/markdown.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/makefile.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/matlab.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/mathematica.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/lua.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/llvm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/lisp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/latex.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/julia-repl.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/julia.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/kotlin.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/java.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/erlang.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/c.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/arduino.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/armasm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/asciidoc.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/apache.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/applescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/ada.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/x86asm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.8.0/build/languages/autohotkey.min.js"></script>
+    <script>hljs.highlightAll();</script>
   </body>
 </html>
