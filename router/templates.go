@@ -2,6 +2,7 @@ package router
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -48,8 +49,10 @@ func (v *Views) renderResultPage(w http.ResponseWriter, page *ResultPage) error 
 }
 
 type CreatePage struct {
-	Meta Meta
-	Error *ErrorResponse
+	Meta       Meta
+	Expiration time.Time
+	Now        time.Time
+	Error      *ErrorResponse
 }
 
 func (v *Views) renderCreatePage(w http.ResponseWriter, page *CreatePage) error {
@@ -59,7 +62,7 @@ func (v *Views) renderCreatePage(w http.ResponseWriter, page *CreatePage) error 
 }
 
 type ErrorResponse struct {
-	StatusCode int
+	StatusCode   int
 	ErrorMessage string
 }
 
@@ -68,6 +71,22 @@ func (v *Views) renderErrorPage(w http.ResponseWriter, page *CreatePage) error {
 	w.WriteHeader(page.Error.StatusCode)
 	err := v.templates.ExecuteTemplate(w, "create_page.html", page)
 	return err
+}
+
+func (v *Views) renderErrorPageShorthand(w http.ResponseWriter, statusCode int, message string) error {
+	now := time.Now()
+	return v.renderErrorPage(w, &CreatePage{
+		Meta: Meta{
+			Title:       "Error",
+			Description: fmt.Sprintf("This paste service encountered an error: %q", message),
+		},
+		Expiration: now.Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
+		Now:        now,
+		Error: &ErrorResponse{
+			StatusCode:   statusCode,
+			ErrorMessage: message,
+		},
+	})
 }
 
 var OurViews *Views

@@ -2,9 +2,9 @@ package text_store
 
 import (
 	badger "github.com/dgraph-io/badger/v4"
+	"github.com/proprietary/pastebin/pastebin_record"
 	"testing"
 	"time"
-	"github.com/proprietary/pastebin/pastebin_record"
 )
 
 func TestMakeSlug(t *testing.T) {

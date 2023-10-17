@@ -136,7 +136,7 @@ func DeletePaste(db *badger.DB, slug Slug) error {
 	})
 }
 
-/// KeepalivePastebin issues a new expiration for a pastebin.
+// / KeepalivePastebin issues a new expiration for a pastebin.
 func KeepalivePastebin(db *badger.DB, slug Slug, newExpiry time.Time) error {
 	var pbData []byte = nil
 	err := db.View(func(txn *badger.Txn) error {

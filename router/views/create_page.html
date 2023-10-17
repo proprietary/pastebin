@@ -171,7 +171,10 @@
 	<form action="/create" method="POST">
 	  <textarea name="paste" id="paste" placeholder="Write your paste here..."></textarea>
 	  <label for="expiration">Expires (optional)</label>
-	  <input type="date" name="expiration" id="expiration" />
+	  <input type="date" name="expiration" id="expiration"
+		 value="{{ .Expiration.Format "2006-01-02" }}"
+		 min="{{ .Now.Format "2006-01-02" }}"
+		 />
 	  <!-- TODO(zds): syntax highlightning -->
 	  <label for="filename">Filename (optional)</label>
 	  <input type="text" name="filename" id="filename" placeholder="ssl.h" />

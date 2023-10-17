@@ -43,16 +43,7 @@ func browserClientHandlerSingleton(db *badger.DB) *BrowserClientHandler {
 func handleCreate(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodPut {
-			OurViews.renderErrorPage(w, &CreatePage{
-				Meta: Meta{
-					Title:       "Wrong method",
-					Description: "This is an error page responding to an incorrect HTTP method.",
-				},
-				Error: &ErrorResponse{
-					ErrorMessage: "Wrong HTTP method; only POST or PUT are allowed at `/create`",
-					StatusCode:   http.StatusMethodNotAllowed,
-				},
-			})
+			OurViews.renderErrorPageShorthand(w, http.StatusMethodNotAllowed, "Wrong HTTP method; only POST or PUT are allowed at `/create`")
 			return
 		}
 		// get form fields
@@ -90,8 +81,8 @@ func handleCreate(db *badger.DB) http.HandlerFunc {
 		// persist paste to store
 		slug, err := text_store.StoreNewPaste(db, &record)
 		if err != nil {
-			// TODO(zds): show error page
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println(err)
+			OurViews.renderErrorPageShorthand(w, http.StatusInternalServerError, "Something happened. Your paste may not have been saved.")
 			return
 		}
 		// return result page
@@ -104,30 +95,12 @@ func handleCreate(db *badger.DB) http.HandlerFunc {
 func handleDelete(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodDelete {
-			OurViews.renderErrorPage(w, &CreatePage{
-				Meta: Meta{
-					Title:       "Wrong method",
-					Description: "This is an error page responding to an incorrect HTTP method.",
-				},
-				Error: &ErrorResponse{
-					ErrorMessage: "Wrong HTTP method; only POST or DELETE are allowed on `/delete`",
-					StatusCode:   http.StatusMethodNotAllowed,
-				},
-			})
+			OurViews.renderErrorPageShorthand(w, http.StatusMethodNotAllowed, "Wrong HTTP method; only POST or DELETE are allowed on `/delete`")
 			return
 		}
 		slug := text_store.Slug(req.FormValue("slug"))
 		if len(slug) == 0 {
-			OurViews.renderErrorPage(w, &CreatePage{
-				Meta: Meta{
-					Title:       "Error: Bad request",
-					Description: "This is an error page responding to a bad request missing a POST parameter.",
-				},
-				Error: &ErrorResponse{
-					ErrorMessage: `Missing "slug" POST parameter in body`,
-					StatusCode:   http.StatusBadRequest,
-				},
-			})
+			OurViews.renderErrorPageShorthand(w, http.StatusBadRequest, `Missing "slug" POST parameter in body`)
 			return
 		}
 		pastebinRecord, err := text_store.FindPaste(db, slug)
@@ -147,16 +120,8 @@ func handleDelete(db *badger.DB) http.HandlerFunc {
 		clientIp := getClientIp(req)
 		if clientIp != owner {
 			log.Printf("attempt by %v to delete a paste (%q) owned by %v", clientIp, slug, owner)
-			OurViews.renderErrorPage(w, &CreatePage{
-				Meta: Meta{
-					Title: "",
-					Description: "",
-				},
-				Error: &ErrorResponse{
-					StatusCode: http.StatusBadRequest,
-					ErrorMessage: "This is not your paste! To delete it, use the same IP address you used to create it.",
-				},
-			})
+			OurViews.renderErrorPageShorthand(w, http.StatusBadRequest,
+				"This is not your paste! To delete it, use the same IP address you used to create it.")
 			return
 		}
 		err = text_store.DeletePaste(db, slug)
@@ -178,7 +143,9 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 					Title:       "Create a new paste",
 					Description: "Create a new text snippet saved as a link on the internet",
 				},
-				Error: nil,
+				Expiration: time.Now().Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
+				Now:        time.Now(),
+				Error:      nil,
 			}
 			err := OurViews.renderCreatePage(w, &page)
 			if err != nil {
@@ -194,6 +161,8 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 						Title:       "Paste not found",
 						Description: "paste not found",
 					},
+					Expiration: time.Now().Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
+					Now:        time.Now(),
 					Error: &ErrorResponse{
 						ErrorMessage: fmt.Sprintf("Paste \"%s\" not found or expired", slug),
 						StatusCode:   http.StatusNotFound,

@@ -4,15 +4,15 @@ import (
 	"log"
 	"net/http"
 	// "html/template"
-	"github.com/proprietary/pastebin/text_store"
 	"github.com/proprietary/pastebin/router"
+	"github.com/proprietary/pastebin/text_store"
 	// pb "github.com/proprietary/pastebin/pastebin_record"
-	badger "github.com/dgraph-io/badger/v4"
-	"os/signal"
-	"os"
-	"syscall"
 	"flag"
 	"fmt"
+	badger "github.com/dgraph-io/badger/v4"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var port *uint = flag.Uint("port", 50999, "port to run HTTP server")

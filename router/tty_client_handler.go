@@ -55,13 +55,13 @@ func (c TtyClientHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			clientIp := getClientIp(req)
 			now := time.Now()
-			expiration := now.Add(time.Hour*DEFAULT_EXPIRATION_HOURS)
+			expiration := now.Add(time.Hour * DEFAULT_EXPIRATION_HOURS)
 			mimeType := req.Header.Get("Content-Type")
 			record := pastebin_record.PastebinRecord{
-				Body: body,
-				Expiration: timestamppb.New(expiration),
+				Body:        body,
+				Expiration:  timestamppb.New(expiration),
 				TimeCreated: timestamppb.New(now),
-				MimeType: &mimeType,
+				MimeType:    &mimeType,
 			}
 			record.Creator = &pastebin_record.IPAddress{
 				Ip: clientIp.AsSlice(),
