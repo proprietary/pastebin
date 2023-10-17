@@ -86,6 +86,42 @@ func LookupPastebin(db *badger.DB, slug Slug) (string, error) {
 	return pb.GetBody(), err
 }
 
+/// KeepalivePastebin issues a new expiration for a pastebin.
+func KeepalivePastebin(db *badger.DB, slug Slug, newExpiry time.Time) error {
+	var pbData []byte = nil
+	err := db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(slug))
+		if err != nil {
+			return err
+		}
+		pbData = make([]byte, item.ValueSize())
+		err = item.Value(func(val []byte) error {
+			copy(pbData, val)
+			return nil
+		})
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	var pb pastebin_record.PastebinRecord
+	if err = proto.Unmarshal(pbData, &pb); err != nil {
+		return err
+	}
+	if newExpiry.Before(pb.Expiration.AsTime()) {
+		return ErrInvalidExpiration
+	}
+	pb.Expiration = timestamppb.New(newExpiry)
+	updatedPb, err := proto.Marshal(&pb)
+	if err != nil {
+		return err
+	}
+	err = db.Update(func(txn *badger.Txn) error {
+		return txn.Set([]byte(slug), updatedPb)
+	})
+	return err
+}
+
 // / RunMaintenance maintains integrity of the storage, including removing expired pastes.
 func RunMaintenance(db *badger.DB) error {
 	now := time.Now()

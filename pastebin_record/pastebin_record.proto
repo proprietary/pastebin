@@ -5,10 +5,19 @@ option go_package = "github.com/proprietary/pastebin/pastebin_record";
 
 import "google/protobuf/timestamp.proto";
 
+message IPAddress {
+  oneof version {
+    fixed32 v4 = 1;
+    bytes v6 = 2;
+  }
+}
+
 message PastebinRecord {
   string body = 1; // literal text; body of utf-8 text file
-  google.protobuf.Timestamp time_created = 2; // when this record was inserted into database
-  optional google.protobuf.Timestamp expiration = 3; // when to purge
-  optional string mime_type = 4; // mime type string of the "file"
-  optional string syntax_highlighting = 5; // language for syntax highlighting
+  IPAddress creator = 2; // IP address (either v4 or v6) of client that created this paste
+  google.protobuf.Timestamp time_created = 3; // when this record was inserted into database
+  optional google.protobuf.Timestamp expiration = 4; // when to purge
+  optional string filename = 5;
+  optional string mime_type = 6; // mime type string of the "file"
+  optional string syntax_highlighting = 7; // language for syntax highlighting
 }

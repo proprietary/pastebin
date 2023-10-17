@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0">
+    <title>{{ .Meta.Title }}</title>
+    <meta name="description" content="{{ .Meta.Description }}">
+  </head>
+  <body>
+    <nav>
+    </nav>
+    <main>
+      <h1>New paste:</h1>
+      <div>
+	<form action="/" method="POST">
+	  <label for="paste">
+	    Text
+	  </label>
+	  <textarea name="paste" id="paste" placeholder="Write your paste here..."></textarea>
+	  <label for="expiration">Expires (optional)</label>
+	  <input type="date" name="expiration" id="expiration" />
+	  <!-- TODO(zds): syntax highlightning -->
+	  <label for="filename">Filename (optional)</label>
+	  <input type="text" name="filename" id="filename" placeholder="ssl.h" />
+	  <button type="submit">
+	    Upload Text
+	  </button>
+	</form>
+      </div>
+    </main>
+  </body>
+</html>
