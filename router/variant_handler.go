@@ -5,11 +5,11 @@ import (
 	"net/http"
 )
 
-type RootHandler struct {
+type VariantHandler struct {
 	Db *badger.DB
 }
 
-func (rh RootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (rh VariantHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// prefer to assume the client is a browser
 	// use "curl"-like handler only if certain
 	var clientIsTextTerminal bool = !userAgentIsBrowser(req) && userAgentIsCurlLike(req)

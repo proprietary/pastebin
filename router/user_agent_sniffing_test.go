@@ -2,7 +2,7 @@ package router
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"path/filepath"
 	"testing"
@@ -14,7 +14,7 @@ type userAgent struct {
 }
 
 func loadUserAgents(filename string) []userAgent {
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := io.ReadAll(filename)
 	if err != nil {
 		log.Fatal(err)
 	}

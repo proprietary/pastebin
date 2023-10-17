@@ -1,12 +1,17 @@
 package router
 
 import (
-	badger "github.com/dgraph-io/badger/v4"
-	"github.com/proprietary/pastebin/text_store"
+	"bytes"
 	"io"
 	"log"
 	"net/http"
 	"time"
+	"unicode/utf8"
+
+	badger "github.com/dgraph-io/badger/v4"
+	"github.com/proprietary/pastebin/pastebin_record"
+	"github.com/proprietary/pastebin/text_store"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type TtyClientHandler struct {
@@ -32,25 +37,48 @@ func (c TtyClientHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			w.Write([]byte(text))
 			w.Header().Add("Content-Type", "text/plain")
-			w.Header().Add("Access-Control-Allow-Origin", "*")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 	case http.MethodPost, http.MethodPut:
 		{
-			body, err := io.ReadAll(req.Body)
+			var buf bytes.Buffer
+			_, err := io.Copy(&buf, req.Body)
 			if err != nil {
-				http.Error(w, "Invalid text posted", http.StatusBadRequest)
+				http.Error(w, "Invalid text", http.StatusBadRequest)
 				return
 			}
-			log.Println(string(body))
-			slug, err := text_store.SavePastebin(c.db, body, time.Now().Add(time.Hour*24*365*2))
+			body := buf.String()
+			if !utf8.ValidString(string(body)) {
+				http.Error(w, "Text must be valid UTF-8", http.StatusBadRequest)
+				return
+			}
+			clientIp := getClientIp(req)
+			now := time.Now()
+			expiration := now.Add(time.Hour*DEFAULT_EXPIRATION_HOURS)
+			mimeType := req.Header.Get("Content-Type")
+			record := pastebin_record.PastebinRecord{
+				Body: body,
+				Expiration: timestamppb.New(expiration),
+				TimeCreated: timestamppb.New(now),
+				MimeType: &mimeType,
+			}
+			record.Creator = &pastebin_record.IPAddress{
+				Ip: clientIp.AsSlice(),
+			}
+			if clientIp.Is4() {
+				record.Creator.Version = pastebin_record.IPAddressVersion_V4
+			} else {
+				record.Creator.Version = pastebin_record.IPAddressVersion_V6
+			}
+			slug, err := text_store.StoreNewPaste(c.db, &record)
 			if err != nil {
 				log.Println("Fail to save pastebin:", err)
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
 			w.Write([]byte(slug))
+			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
 			return
 		}

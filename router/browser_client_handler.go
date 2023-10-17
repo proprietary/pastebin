@@ -43,13 +43,15 @@ func browserClientHandlerSingleton(db *badger.DB) *BrowserClientHandler {
 func handleCreate(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodPut {
-			OurViews.renderErrorPage(w, &ErrorPage{
+			OurViews.renderErrorPage(w, &CreatePage{
 				Meta: Meta{
 					Title:       "Wrong method",
 					Description: "This is an error page responding to an incorrect HTTP method.",
 				},
-				ErrorMessage: "Wrong HTTP method; only POST or PUT are allowed at `/create`",
-				StatusCode:   http.StatusMethodNotAllowed,
+				Error: &ErrorResponse{
+					ErrorMessage: "Wrong HTTP method; only POST or PUT are allowed at `/create`",
+					StatusCode:   http.StatusMethodNotAllowed,
+				},
 			})
 			return
 		}
@@ -102,25 +104,29 @@ func handleCreate(db *badger.DB) http.HandlerFunc {
 func handleDelete(db *badger.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodDelete {
-			OurViews.renderErrorPage(w, &ErrorPage{
+			OurViews.renderErrorPage(w, &CreatePage{
 				Meta: Meta{
 					Title:       "Wrong method",
 					Description: "This is an error page responding to an incorrect HTTP method.",
 				},
-				ErrorMessage: "Wrong HTTP method; only POST or DELETE are allowed on `/delete`",
-				StatusCode:   http.StatusMethodNotAllowed,
+				Error: &ErrorResponse{
+					ErrorMessage: "Wrong HTTP method; only POST or DELETE are allowed on `/delete`",
+					StatusCode:   http.StatusMethodNotAllowed,
+				},
 			})
 			return
 		}
 		slug := text_store.Slug(req.FormValue("slug"))
 		if len(slug) == 0 {
-			OurViews.renderErrorPage(w, &ErrorPage{
+			OurViews.renderErrorPage(w, &CreatePage{
 				Meta: Meta{
 					Title:       "Error: Bad request",
 					Description: "This is an error page responding to a bad request missing a POST parameter.",
 				},
-				ErrorMessage: `Missing "slug" POST parameter in body`,
-				StatusCode:   http.StatusBadRequest,
+				Error: &ErrorResponse{
+					ErrorMessage: `Missing "slug" POST parameter in body`,
+					StatusCode:   http.StatusBadRequest,
+				},
 			})
 			return
 		}
@@ -140,10 +146,17 @@ func handleDelete(db *badger.DB) http.HandlerFunc {
 		}
 		clientIp := getClientIp(req)
 		if clientIp != owner {
-			// TODO(zds): Show message that you do not own this paste
 			log.Printf("attempt by %v to delete a paste (%q) owned by %v", clientIp, slug, owner)
-			w.Header().Set("Location", "/")
-			w.WriteHeader(http.StatusFound)
+			OurViews.renderErrorPage(w, &CreatePage{
+				Meta: Meta{
+					Title: "",
+					Description: "",
+				},
+				Error: &ErrorResponse{
+					StatusCode: http.StatusBadRequest,
+					ErrorMessage: "This is not your paste! To delete it, use the same IP address you used to create it.",
+				},
+			})
 			return
 		}
 		err = text_store.DeletePaste(db, slug)
@@ -165,6 +178,7 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 					Title:       "Create a new paste",
 					Description: "Create a new text snippet saved as a link on the internet",
 				},
+				Error: nil,
 			}
 			err := OurViews.renderCreatePage(w, &page)
 			if err != nil {
@@ -175,17 +189,18 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 			slug := text_store.Slug(req.URL.Path[1:])
 			paste, err := text_store.FindPaste(db, slug)
 			if err != nil {
-				OurViews.renderErrorPage(w, &ErrorPage{
+				OurViews.renderErrorPage(w, &CreatePage{
 					Meta: Meta{
 						Title:       "Paste not found",
 						Description: "paste not found",
 					},
-					ErrorMessage: fmt.Sprintf("Paste \"%s\" not found or expired", slug),
-					StatusCode:   http.StatusNotFound,
+					Error: &ErrorResponse{
+						ErrorMessage: fmt.Sprintf("Paste \"%s\" not found or expired", slug),
+						StatusCode:   http.StatusNotFound,
+					},
 				})
 				return
 			}
-			log.Println(paste.GetFilename(), paste.GetBody())
 			page := ResultPage{
 				Meta: Meta{
 					Title:       "Paste found",

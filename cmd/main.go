@@ -28,7 +28,7 @@ func main() {
 		db.Close()
 		os.Exit(0)
 	}()
-	var handler router.RootHandler = router.RootHandler{
+	var handler router.VariantHandler = router.VariantHandler{
 		Db: db,
 	}
 	err := http.ListenAndServe(fmt.Sprintf(":%d", *port), handler)

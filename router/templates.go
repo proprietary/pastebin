@@ -3,7 +3,6 @@ package router
 import (
 	"embed"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -42,29 +41,32 @@ type ResultPage struct {
 	Slug     string
 }
 
-func (v *Views) renderResultPage(w io.Writer, page *ResultPage) error {
+func (v *Views) renderResultPage(w http.ResponseWriter, page *ResultPage) error {
+	w.Header().Add("X-Content-Type-Options", "nosniff")
 	err := v.templates.ExecuteTemplate(w, "result_page.html", page)
 	return err
 }
 
 type CreatePage struct {
 	Meta Meta
+	Error *ErrorResponse
 }
 
-func (v *Views) renderCreatePage(w io.Writer, page *CreatePage) error {
+func (v *Views) renderCreatePage(w http.ResponseWriter, page *CreatePage) error {
+	w.Header().Add("X-Content-Type-Options", "nosniff")
 	err := v.templates.ExecuteTemplate(w, "create_page.html", page)
 	return err
 }
 
-type ErrorPage struct {
-	Meta         Meta
-	StatusCode   int
+type ErrorResponse struct {
+	StatusCode int
 	ErrorMessage string
 }
 
-func (v *Views) renderErrorPage(w http.ResponseWriter, page *ErrorPage) error {
-	err := v.templates.ExecuteTemplate(w, "error_page.html", page)
-	w.WriteHeader(page.StatusCode)
+func (v *Views) renderErrorPage(w http.ResponseWriter, page *CreatePage) error {
+	w.Header().Add("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(page.Error.StatusCode)
+	err := v.templates.ExecuteTemplate(w, "create_page.html", page)
 	return err
 }
 
