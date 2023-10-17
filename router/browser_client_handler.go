@@ -4,89 +4,44 @@ import (
 	"github.com/proprietary/pastebin/text_store"
 	"github.com/proprietary/pastebin/pastebin_record"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io"
 	"fmt"
 	"log"
 	"net/http"
 	"net/netip"
 	"time"
+	badger "github.com/dgraph-io/badger/v4"
 )
-
-type RootHandler struct {
-}
-
-func (_ RootHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// prefer to assume the client is a browser
-	// use "curl"-like handler only if certain
-	var clientIsTextTerminal bool = !userAgentIsBrowser(req) && userAgentIsCurlLike(req)
-	var handler http.Handler = nil
-	if clientIsTextTerminal {
-		handler = NewTtyClientHandler()
-	} else {
-		handler = NewBrowserClientHandler()
-	}
-	handler.ServeHTTP(w, req)
-}
-
-type TtyClientHandler struct {
-}
-
-func NewTtyClientHandler() TtyClientHandler {
-	return TtyClientHandler{}
-}
-
-func (_ TtyClientHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	switch req.Method {
-	case http.MethodGet:
-		{
-			slug := text_store.Slug(req.URL.Path[1:])
-			db := text_store.OpenDb()
-			defer db.Close()
-			text, err := text_store.LookupPastebin(db, slug)
-			if err != nil {
-				log.Println(err)
-				http.Error(w, "Not Found", http.StatusNotFound)
-				return
-			}
-			w.Write([]byte(text))
-			w.Header().Add("Content-Type", "text/plain")
-			w.Header().Add("Access-Control-Allow-Origin", "*")
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-	case http.MethodPost, http.MethodPut:
-		{
-			body, err := io.ReadAll(req.Body)
-			if err != nil {
-				http.Error(w, "Invalid text posted", http.StatusBadRequest)
-				return
-			}
-			log.Println(string(body))
-			db := text_store.OpenDb()
-			defer db.Close()
-			slug, err := text_store.SavePastebin(db, body, time.Now().Add(time.Hour*24*365*2))
-			if err != nil {
-				log.Println("Fail to save pastebin:", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-			w.Write([]byte(slug))
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-	default:
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-}
 
 type BrowserClientHandler struct{
 	mux *http.ServeMux
+	db *badger.DB
 }
 
-func NewBrowserClientHandler() BrowserClientHandler {
+func NewBrowserClientHandler(db *badger.DB) BrowserClientHandler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/create", func(w http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/create", handleCreate(db))
+	mux.HandleFunc("/delete", handleDelete(db))
+	mux.HandleFunc("/", handleRoot(db))
+	return BrowserClientHandler{
+		mux: mux,
+		db: db,
+	}
+}
+
+func (c BrowserClientHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	c.mux.ServeHTTP(w, req)
+}
+
+func browserClientHandlerSingleton(db *badger.DB) *BrowserClientHandler {
+	if browserClientHandler == nil {
+		browserClientHandler = new(BrowserClientHandler)
+		*browserClientHandler = NewBrowserClientHandler(db)
+	}
+	return browserClientHandler
+}
+
+func handleCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodPut {
 			OurViews.renderErrorPage(w, &ErrorPage{
 				Meta: Meta{
@@ -131,8 +86,6 @@ func NewBrowserClientHandler() BrowserClientHandler {
 			record.Creator.Version = pastebin_record.IPAddressVersion_V6
 		}
 		// persist paste to store
-		db := text_store.OpenDb()
-		defer db.Close()
 		slug, err := text_store.StoreNewPaste(db, &record)
 		if err != nil {
 			// TODO(zds): show error page
@@ -143,8 +96,11 @@ func NewBrowserClientHandler() BrowserClientHandler {
 		w.Header().Set("Location", fmt.Sprintf("%s/%s", "", slug))
 		w.WriteHeader(http.StatusFound)
 		return
-	})
-	mux.HandleFunc("/delete", func(w http.ResponseWriter, req *http.Request) {
+	}
+}
+
+func handleDelete(db *badger.DB) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost && req.Method != http.MethodDelete {
 			OurViews.renderErrorPage(w, &ErrorPage{
 				Meta: Meta{
@@ -168,8 +124,6 @@ func NewBrowserClientHandler() BrowserClientHandler {
 			})
 			return
 		}
-		db := text_store.OpenDb()
-		defer db.Close()
 		pastebinRecord, err := text_store.FindPaste(db, slug)
 		if err != nil {
 			log.Println(err)
@@ -199,8 +153,11 @@ func NewBrowserClientHandler() BrowserClientHandler {
 		w.Header().Set("Location", "/")
 		w.WriteHeader(http.StatusFound)
 		return
-	})
-	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	}
+}
+
+func handleRoot(db *badger.DB) func (http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		switch req.URL.Path {
 		case "/":
 			page := CreatePage{
@@ -216,8 +173,6 @@ func NewBrowserClientHandler() BrowserClientHandler {
 			return
 		default:
 			slug := text_store.Slug(req.URL.Path[1:])
-			db := text_store.OpenDb()
-			defer db.Close()
 			paste, err := text_store.FindPaste(db, slug)
 			if err != nil {
 				OurViews.renderErrorPage(w, &ErrorPage{
@@ -239,6 +194,7 @@ func NewBrowserClientHandler() BrowserClientHandler {
 				Paste: paste.GetBody(),
 				Exp: paste.GetExpiration().AsTime(),
 				Filename: paste.GetFilename(),
+				Slug: string(slug),
 			}
 			err = OurViews.renderResultPage(w, &page)
 			if err != nil {
@@ -246,89 +202,7 @@ func NewBrowserClientHandler() BrowserClientHandler {
 			}
 			return
 		}
-	})
-	return BrowserClientHandler{
-		mux: mux,
 	}
 }
 
-func (c BrowserClientHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	c.mux.ServeHTTP(w, req)
-}
-
-func knownCloudflare() []netip.Prefix {
-	// See: https://www.cloudflare.com/ips/
-	cloudflareIps := [...]string{
-		"173.245.48.0/20",
-		"103.21.244.0/22",
-		"103.22.200.0/22",
-		"103.31.4.0/22",
-		"141.101.64.0/18",
-		"108.162.192.0/18",
-		"190.93.240.0/20",
-		"188.114.96.0/20",
-		"197.234.240.0/22",
-		"198.41.128.0/17",
-		"162.158.0.0/15",
-		"104.16.0.0/13",
-		"104.24.0.0/14",
-		"172.64.0.0/13",
-		"131.0.72.0/22",
-		"2400:cb00::/32",
-		"2606:4700::/32",
-		"2803:f800::/32",
-		"2405:b500::/32",
-		"2405:8100::/32",
-		"2a06:98c0::/29",
-		"2c0f:f248::/32",
-	}
-	dst := make([]netip.Prefix, len(cloudflareIps))
-	for i, ipString := range cloudflareIps {
-		dst[i] = netip.MustParsePrefix(ipString)
-	}
-	return dst
-}
-
-var knownCloudflareNetworks []netip.Prefix
-
-func init() {
-	knownCloudflareNetworks = knownCloudflare()
-}
-
-
-func getClientIp(req *http.Request) netip.Addr {
-	// normal client
-	addrPort := netip.MustParseAddrPort(req.RemoteAddr)
-	addr := addrPort.Addr()
-	// correctly receive client IP if this service is running behind Cloudflare
-	cfClientIp := req.Header.Get("CF-Connecting-IP")
-	if len(cfClientIp) > 0 {
-		var isTrustworthy bool = false
-		// make sure this is not spoofed
-		if addr.IsPrivate() || addr.IsLoopback() {
-			isTrustworthy = true
-		} else {
-			for _, prefix := range knownCloudflareNetworks {
-				if prefix.Contains(addr) {
-					isTrustworthy = true
-				}
-			}
-		}
-		if isTrustworthy {
-			parsedCfClientIp, err := netip.ParseAddr(cfClientIp)
-			if err != nil {
-				// basically should never happen
-				return addr
-			}
-			return parsedCfClientIp
-		} else {
-			// client tried to forge a Cloudflare request
-			log.Printf(`Client with IP=%q tried to forge a Cloudflare request by setting the header "CF-Connecting-IP"`,
-			addr.String())
-			return addr
-		}
-	}
-	return addr
-}
-
-const DEFAULT_EXPIRATION_HOURS = 24 * 365 * 2
+var browserClientHandler *BrowserClientHandler = nil

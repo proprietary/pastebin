@@ -39,6 +39,7 @@ type ResultPage struct {
 	Paste string
 	Exp time.Time
 	Filename string
+	Slug string
 }
 
 func (v *Views) renderResultPage(w io.Writer, page *ResultPage) error {

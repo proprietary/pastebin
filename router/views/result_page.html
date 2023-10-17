@@ -18,6 +18,12 @@
 	  {{ .Paste }}
 	</pre>
       </div>
+      <div>
+	<form method="post" action="/delete">
+	  <input type="hidden" name="slug" value="{{ .Slug }}" />
+	  <button type="submit">Delete my paste</button>
+	</form>
+      </div>
     </main>
   </body>
 </html>
