@@ -2,6 +2,7 @@ package router
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -77,7 +78,7 @@ func (c TtyClientHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
-			w.Write([]byte(slug))
+			w.Write([]byte(fmt.Sprintf("https://paste.libhack.so/%s", slug)))
 			w.Header().Add("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
 			return
