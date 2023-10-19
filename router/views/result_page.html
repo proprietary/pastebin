@@ -280,29 +280,52 @@
 	  }
 
 	  copyToClipboard() {
+	      const targetElement = document.querySelector(this.getAttribute("data-text-source-selector"));
+	      if (targetElement == null) {
+		  throw new Error(`attribute "data-text-source-selector" is not a valid selector in this DOM.`);
+	      }
+	      // Try a few different ways to copy to the system clipboard
+	      if (navigator.clipboard != null && navigator.clipboard.writeText != null) {
+		  // modern way, but it doesn't work on non-HTTPS
+		  navigator.clipboard.writeText(targetElement.innerText)
+		      .then(this.onCopiedToClipboard.bind(this))
+		      .catch(console.error);
+	      } else if (document.body.createTextRange) {
+		  const range = document.body.createTextRange();
+		  range.moveToElementText(targetElement);
+		  range.select();
+		  document.execCommand("Copy");
+		  this.onCopiedToClipboard();
+	      } else if (window.getSelection) {
+		  // for older browsers
+		  // ...but if this is an older browser, how does it have WebComponents 🤔
+		  const selection = window.getSelection();
+		  const range = document.createRange();
+		  range.selectNodeContents(targetElement);
+		  selection.removeAllRanges();
+		  selection.addRange(range);
+		  document.execCommand("Copy");
+		  this.onCopiedToClipboard();
+	      }	  
+	  }
+
+	  // Should run after text was successfully copied to the client's clipboard.
+	  onCopiedToClipboard() {
 	      const button = this.getButton();
-	      const textSourceSelector = this.getAttribute("data-text-source-selector");
-	      const textToCopy = document.querySelector(textSourceSelector) && document.querySelector(textSourceSelector).innerText;
-	      navigator.clipboard.writeText(textToCopy).then(() => {
-		  // Provide user feedback that text was cpied
-		  button.innerHTML = CopyToClipboardButton.clipboardWithCheckIcon;
-		  // Reset icon after a couple seconds
-		  setTimeout(() => {
-		      button.innerHTML = CopyToClipboardButton.clipboardIcon;
-		  }, 2000);
-	      }).catch((err) => {
-		  console.error(err);
-	      });
+	      // Provide user feedback that text was copied
+	      button.innerHTML = CopyToClipboardButton.clipboardWithCheckIcon;
+	      // Reset icon after a couple seconds
+	      window.setTimeout(() => {
+		  button.innerHTML = CopyToClipboardButton.clipboardIcon;
+	      }, 2000);
 	  }
 	  
 	  connectedCallback() {
-	      const button = this.getButton();
-	      button.addEventListener("click", this.copyToClipboard.bind(this));
+	      this.getButton().addEventListener("click", this.copyToClipboard.bind(this));
 	  }
 
 	  disconnectedCallback() {
-	      const button = this.getButton();
-	      button.removeEventListener("click", this.copyToClipboard.bind(this));
+	      this.getButton().removeEventListener("click", this.copyToClipboard.bind(this));
 	  }
       }
       customElements.define("libhack-copy-to-clipboard-button", CopyToClipboardButton);
