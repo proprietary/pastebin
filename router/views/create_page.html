@@ -173,7 +173,7 @@
 	  <label for="expiration">Expires (optional)</label>
 	  <input type="date" name="expiration" id="expiration"
 		 value="{{ .Expiration.Format "2006-01-02" }}"
-		 min="{{ .Now.Format "2006-01-02" }}"
+		 min="{{ .MinExpiration.Format "2006-01-02" }}"
 		 />
 	  <!-- TODO(zds): syntax highlightning -->
 	  <label for="filename">Filename (optional)</label>

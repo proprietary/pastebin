@@ -143,9 +143,9 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 					Title:       "Create a new paste",
 					Description: "Create a new text snippet saved as a link on the internet",
 				},
-				Expiration: time.Now().Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
-				Now:        time.Now(),
-				Error:      nil,
+				Expiration:    time.Now().Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
+				MinExpiration: time.Now().Add(time.Hour * 24),
+				Error:         nil,
 			}
 			err := OurViews.renderCreatePage(w, &page)
 			if err != nil {
@@ -161,8 +161,8 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 						Title:       "Paste not found",
 						Description: "paste not found",
 					},
-					Expiration: time.Now().Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
-					Now:        time.Now(),
+					Expiration:    time.Now().Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
+					MinExpiration: time.Now().Add(time.Hour * 24),
 					Error: &ErrorResponse{
 						ErrorMessage: fmt.Sprintf("Paste \"%s\" not found or expired", slug),
 						StatusCode:   http.StatusNotFound,

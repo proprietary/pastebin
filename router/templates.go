@@ -49,10 +49,10 @@ func (v *Views) renderResultPage(w http.ResponseWriter, page *ResultPage) error 
 }
 
 type CreatePage struct {
-	Meta       Meta
-	Expiration time.Time
-	Now        time.Time
-	Error      *ErrorResponse
+	Meta          Meta
+	Expiration    time.Time
+	MinExpiration time.Time
+	Error         *ErrorResponse
 }
 
 func (v *Views) renderCreatePage(w http.ResponseWriter, page *CreatePage) error {
@@ -80,8 +80,8 @@ func (v *Views) renderErrorPageShorthand(w http.ResponseWriter, statusCode int, 
 			Title:       "Error",
 			Description: fmt.Sprintf("This paste service encountered an error: %q", message),
 		},
-		Expiration: now.Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
-		Now:        now,
+		Expiration:    now.Add(time.Hour * DEFAULT_EXPIRATION_HOURS),
+		MinExpiration: now.Add(time.Hour * 24),
 		Error: &ErrorResponse{
 			StatusCode:   statusCode,
 			ErrorMessage: message,
