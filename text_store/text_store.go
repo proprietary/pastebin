@@ -230,6 +230,7 @@ func GenerateTextSlug(pb *pastebin_record.PastebinRecord) Slug {
 	h := sha256.New()
 	h.Write([]byte(pb.GetFilename()))
 	h.Write([]byte(pb.GetBody()))
+	h.Write(pb.GetCreator().GetIp())
 	sum := h.Sum(nil)
 	return makeSlug(sum)
 }
