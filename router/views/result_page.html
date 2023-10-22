@@ -159,12 +159,14 @@
 	</libhack-copy-to-clipboard-button>
 	<pre><code id="paste-contents">{{ .Paste }}</code></pre>
       </div>
+      {{ if .IsCreator }}
       <div>
 	<form method="post" action="/delete">
 	  <input type="hidden" name="slug" value="{{ .Slug }}" />
 	  <button type="submit">Delete my paste</button>
 	</form>
       </div>
+      {{ end }}
     </main>
     <footer>
       <div class="copyright">

@@ -35,11 +35,12 @@ func New() *Views {
 }
 
 type ResultPage struct {
-	Meta     Meta
-	Paste    string
-	Exp      time.Time
-	Filename string
-	Slug     string
+	Meta      Meta
+	Paste     string
+	Exp       time.Time
+	Filename  string
+	Slug      string
+	IsCreator bool
 }
 
 func (v *Views) renderResultPage(w http.ResponseWriter, page *ResultPage) error {

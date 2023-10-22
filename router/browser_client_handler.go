@@ -1,15 +1,17 @@
 package router
 
 import (
+	"bytes"
 	"fmt"
-	badger "github.com/dgraph-io/badger/v4"
-	"github.com/proprietary/pastebin/pastebin_record"
-	"github.com/proprietary/pastebin/text_store"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
 	"net/http"
 	"net/netip"
 	"time"
+
+	badger "github.com/dgraph-io/badger/v4"
+	"github.com/proprietary/pastebin/pastebin_record"
+	"github.com/proprietary/pastebin/text_store"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type BrowserClientHandler struct {
@@ -175,10 +177,11 @@ func handleRoot(db *badger.DB) http.HandlerFunc {
 					Title:       "Paste found",
 					Description: "Paste found",
 				},
-				Paste:    paste.GetBody(),
-				Exp:      paste.GetExpiration().AsTime(),
-				Filename: paste.GetFilename(),
-				Slug:     string(slug),
+				Paste:     paste.GetBody(),
+				Exp:       paste.GetExpiration().AsTime(),
+				Filename:  paste.GetFilename(),
+				Slug:      string(slug),
+				IsCreator: paste.GetCreator() != nil && bytes.Equal(getClientIp(req).AsSlice(), paste.GetCreator().GetIp()),
 			}
 			err = OurViews.renderResultPage(w, &page)
 			if err != nil {
